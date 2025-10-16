@@ -1,5 +1,7 @@
 # go-getter-file
 
+[![CI/CD](https://github.com/universal-development/go-getter-file/actions/workflows/ci.yml/badge.svg)](https://github.com/universal-development/go-getter-file/actions/workflows/ci.yml)
+
 CLI application which do configuration files for go-getter v2.
 
 Features:
@@ -54,6 +56,62 @@ sources:
     dest: "local-config/"
     recursive: true
 ```
+
+## Development
+
+### Building
+
+The project uses [just](https://github.com/casey/just) as a command runner for common tasks.
+
+```bash
+# Build the application
+just build
+
+# Build for all platforms
+just build-all
+
+# Run tests
+just test
+
+# Run tests with coverage
+just test-coverage
+
+# Clean build artifacts
+just clean
+
+# See all available commands
+just --list
+```
+
+### Testing
+
+```bash
+# Run unit tests
+go test -v ./...
+
+# Run tests with coverage
+go test -v -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
+```
+
+### CI/CD
+
+The project uses GitHub Actions for continuous integration and deployment:
+
+- **On Push/PR**: Runs tests and builds binaries for all platforms
+- **On Tag (v*)**: Creates a GitHub release with:
+  - Multi-platform binaries (Linux, macOS, Windows)
+  - Compressed archives (.tar.gz, .zip)
+  - SHA256 checksums
+  - Auto-generated release notes
+
+To create a new release:
+```bash
+git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+```
+
+The version is automatically derived from git tags using `git describe --tags --abbrev=12 --dirty --broken`.
 
 ## TODO
 
