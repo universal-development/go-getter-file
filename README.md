@@ -69,6 +69,7 @@ sources:
 - [ ] Add Dockerfile for containerized usage
 - [ ] Add just file for building project
 - [ ] Add GitHub Actions workflow for CI/CD
+- [ ] Add custom headers to requests
 
 ## License
 
