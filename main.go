@@ -10,9 +10,8 @@ import (
 	"github.com/universal-development/go-getter-file/internal/processor"
 )
 
-const (
-	version = "1.0.0"
-)
+// version is set via ldflags during build
+var version = "dev"
 
 func main() {
 	if err := run(); err != nil {
@@ -37,6 +36,9 @@ func run() error {
 		fmt.Printf("go-getter-file version %s\n", version)
 		return nil
 	}
+
+	// Print version on startup
+	fmt.Printf("go-getter-file version %s\n", version)
 
 	// Create context with cancellation
 	ctx, cancel := context.WithCancel(context.Background())

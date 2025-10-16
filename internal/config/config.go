@@ -10,10 +10,10 @@ import (
 
 // Config represents the global configuration for all sources
 type Config struct {
-	Parallelism   int           `yaml:"parallelism,omitempty"`
-	Retries       int           `yaml:"retries,omitempty"`
-	Timeout       time.Duration `yaml:"timeout,omitempty"`
-	GoGetterPath  string        `yaml:"go-getter-path,omitempty"`
+	Parallelism  int           `yaml:"parallelism,omitempty"`
+	Retries      int           `yaml:"retries,omitempty"`
+	Timeout      time.Duration `yaml:"timeout,omitempty"`
+	GoGetterPath string        `yaml:"go-getter-path,omitempty"`
 }
 
 // Source represents a single source to fetch
