@@ -71,34 +71,20 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.25'
+
+      - name: Install just
+        uses: extractions/setup-just@v2
 
       - name: Get version
         id: version
         run: |
-          VERSION=$(git describe --tags --abbrev=12 --dirty --broken 2>/dev/null || echo "dev")
+          VERSION=$(just version)
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Building version: $VERSION"
 
-      - name: Build for Linux (amd64)
-        run: |
-          GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=${{ steps.version.outputs.VERSION }}" -o dist/go-getter-file-linux-amd64
-
-      - name: Build for Linux (arm64)
-        run: |
-          GOOS=linux GOARCH=arm64 go build -ldflags "-X main.version=${{ steps.version.outputs.VERSION }}" -o dist/go-getter-file-linux-arm64
-
-      - name: Build for macOS (amd64)
-        run: |
-          GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=${{ steps.version.outputs.VERSION }}" -o dist/go-getter-file-darwin-amd64
-
-      - name: Build for macOS (arm64)
-        run: |
-          GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version=${{ steps.version.outputs.VERSION }}" -o dist/go-getter-file-darwin-arm64
-
-      - name: Build for Windows (amd64)
-        run: |
-          GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=${{ steps.version.outputs.VERSION }}" -o dist/go-getter-file-windows-amd64.exe
+      - name: Build for all platforms
+        run: just build-all
 
       - name: Generate checksums
         run: |
