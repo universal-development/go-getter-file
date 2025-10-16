@@ -1,0 +1,11 @@
+# Simple test configuration - fetches a single file
+version: 1
+name: "simple-test"
+
+config:
+  retries: 3
+  timeout: 30s
+
+sources:
+  - url: "https://raw.githubusercontent.com/hashicorp/go-getter/main/README.md"
+    dest: "output/README.md"

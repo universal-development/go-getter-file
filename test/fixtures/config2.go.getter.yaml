@@ -1,0 +1,11 @@
+# Test configuration 2 - part of multi-config test
+version: 1
+name: "config2"
+
+config:
+  retries: 3
+  timeout: 30s
+
+sources:
+  - url: "https://raw.githubusercontent.com/hashicorp/go-getter/main/CHANGELOG.md"
+    dest: "out2"

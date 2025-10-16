@@ -39,3 +39,8 @@ dist/
 # Downloaded files from examples
 downloaded-*.md
 github-*.md
+
+# Integration test artifacts
+test/go-getter-file
+test/go-getter-file.exe
+test/fixtures/output/

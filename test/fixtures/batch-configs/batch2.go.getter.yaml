@@ -1,0 +1,7 @@
+# Batch test configuration 2
+version: 1
+name: "batch2"
+
+sources:
+  - url: "https://raw.githubusercontent.com/hashicorp/go-getter/main/CHANGELOG.md"
+    dest: "batch_out2"

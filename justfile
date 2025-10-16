@@ -39,9 +39,18 @@ run:
     @just build
     ./go-getter-file example.go.getter.yaml
 
-# Run tests
+# Run unit tests
 test:
-    go test -v ./...
+    go test -v ./internal/...
+
+# Run integration tests
+test-integration:
+    cd test && go test -v -timeout 5m
+
+# Run all tests (unit + integration)
+test-all:
+    go test -v ./internal/...
+    cd test && go test -v -timeout 5m
 
 # Run tests with coverage
 test-coverage:
@@ -56,6 +65,7 @@ clean:
     rm -rf dist/
     rm -f coverage.out coverage.html
     rm -rf downloaded-*.md github-*.md
+    rm -f test/go-getter-file
 
 # Install the application
 install:
@@ -87,6 +97,9 @@ show-version:
 # Development workflow - format, test, build
 dev: fmt test build
 
-# Prepare for release - format, lint, test, build-all
-release: fmt lint test build-all
+# Development workflow with all tests
+dev-full: fmt test-all build
+
+# Prepare for release - format, lint, test-all, build-all
+release: fmt lint test-all build-all
     @echo "Release build complete!"

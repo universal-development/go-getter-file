@@ -1,0 +1,7 @@
+# Batch test configuration 3
+version: 1
+name: "batch3"
+
+sources:
+  - url: "https://raw.githubusercontent.com/hashicorp/go-getter/main/LICENSE"
+    dest: "batch_out3"
