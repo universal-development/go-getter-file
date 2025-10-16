@@ -34,6 +34,7 @@ go.work.sum
 # Build artifacts
 go-getter-file
 go-getter-file.exe
+dist/
 
 # Downloaded files from examples
 downloaded-*.md
