@@ -104,12 +104,34 @@ The project uses GitHub Actions for continuous integration and deployment:
   - Compressed archives (.tar.gz, .zip)
   - SHA256 checksums
   - Auto-generated release notes
+- **Manual Trigger**: Supports workflow_dispatch for custom releases
 
-To create a new release:
+#### Creating Releases
+
+**Standard Release:**
 ```bash
 git tag -a v1.0.0 -m "Release v1.0.0"
 git push origin v1.0.0
 ```
+
+**Pre-Release (auto-detected):**
+Tags containing `alpha`, `beta`, `rc`, `pre`, `preview`, or `dev` are automatically marked as pre-releases:
+```bash
+git tag -a v1.0.0-rc1 -m "Release candidate 1"
+git push origin v1.0.0-rc1
+```
+
+**Manual Release (via GitHub Actions UI):**
+1. Go to Actions → CI/CD → Run workflow
+2. Enter the tag name (e.g., `v1.0.0`)
+3. Optionally check "Create as draft release"
+4. Optionally check "Mark as pre-release"
+5. Click "Run workflow"
+
+This allows you to:
+- Create releases without pushing tags
+- Override automatic pre-release detection
+- Create draft releases for review before publishing
 
 The version is automatically derived from git tags using `git describe --tags --abbrev=12 --dirty --broken`.
 
