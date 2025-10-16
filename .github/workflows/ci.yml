@@ -1,0 +1,216 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Verify dependencies
+        run: just verify
+
+      - name: Run tests with coverage
+        run: just test-coverage
+
+      - name: Display coverage
+        run: go tool cover -func=coverage.out
+
+      - name: Upload coverage to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.out
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(git describe --tags --abbrev=12 --dirty --broken 2>/dev/null || echo "dev")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Build for Linux (amd64)
+        run: |
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=${{ steps.version.outputs.VERSION }}" -o dist/go-getter-file-linux-amd64
+
+      - name: Build for Linux (arm64)
+        run: |
+          GOOS=linux GOARCH=arm64 go build -ldflags "-X main.version=${{ steps.version.outputs.VERSION }}" -o dist/go-getter-file-linux-arm64
+
+      - name: Build for macOS (amd64)
+        run: |
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=${{ steps.version.outputs.VERSION }}" -o dist/go-getter-file-darwin-amd64
+
+      - name: Build for macOS (arm64)
+        run: |
+          GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version=${{ steps.version.outputs.VERSION }}" -o dist/go-getter-file-darwin-arm64
+
+      - name: Build for Windows (amd64)
+        run: |
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=${{ steps.version.outputs.VERSION }}" -o dist/go-getter-file-windows-amd64.exe
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum * > checksums.txt
+          cat checksums.txt
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: dist/
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries
+          path: dist/
+
+      - name: Create release archives
+        run: |
+          cd dist
+
+          # Linux amd64
+          tar czf go-getter-file-${{ github.ref_name }}-linux-amd64.tar.gz go-getter-file-linux-amd64
+
+          # Linux arm64
+          tar czf go-getter-file-${{ github.ref_name }}-linux-arm64.tar.gz go-getter-file-linux-arm64
+
+          # macOS amd64
+          tar czf go-getter-file-${{ github.ref_name }}-darwin-amd64.tar.gz go-getter-file-darwin-amd64
+
+          # macOS arm64
+          tar czf go-getter-file-${{ github.ref_name }}-darwin-arm64.tar.gz go-getter-file-darwin-arm64
+
+          # Windows amd64
+          zip go-getter-file-${{ github.ref_name }}-windows-amd64.zip go-getter-file-windows-amd64.exe
+
+          # Update checksums with archives
+          sha256sum *.tar.gz *.zip > checksums.txt
+
+          ls -lh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/go-getter-file-${{ github.ref_name }}-linux-amd64.tar.gz
+            dist/go-getter-file-${{ github.ref_name }}-linux-arm64.tar.gz
+            dist/go-getter-file-${{ github.ref_name }}-darwin-amd64.tar.gz
+            dist/go-getter-file-${{ github.ref_name }}-darwin-arm64.tar.gz
+            dist/go-getter-file-${{ github.ref_name }}-windows-amd64.zip
+            dist/checksums.txt
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## Installation
+
+            Download the appropriate binary for your platform from the assets below.
+
+            ### Linux
+            ```bash
+            # AMD64
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/go-getter-file-${{ github.ref_name }}-linux-amd64.tar.gz
+            tar xzf go-getter-file-${{ github.ref_name }}-linux-amd64.tar.gz
+            chmod +x go-getter-file-linux-amd64
+            sudo mv go-getter-file-linux-amd64 /usr/local/bin/go-getter-file
+
+            # ARM64
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/go-getter-file-${{ github.ref_name }}-linux-arm64.tar.gz
+            tar xzf go-getter-file-${{ github.ref_name }}-linux-arm64.tar.gz
+            chmod +x go-getter-file-linux-arm64
+            sudo mv go-getter-file-linux-arm64 /usr/local/bin/go-getter-file
+            ```
+
+            ### macOS
+            ```bash
+            # Intel (AMD64)
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/go-getter-file-${{ github.ref_name }}-darwin-amd64.tar.gz
+            tar xzf go-getter-file-${{ github.ref_name }}-darwin-amd64.tar.gz
+            chmod +x go-getter-file-darwin-amd64
+            sudo mv go-getter-file-darwin-amd64 /usr/local/bin/go-getter-file
+
+            # Apple Silicon (ARM64)
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/go-getter-file-${{ github.ref_name }}-darwin-arm64.tar.gz
+            tar xzf go-getter-file-${{ github.ref_name }}-darwin-arm64.tar.gz
+            chmod +x go-getter-file-darwin-arm64
+            sudo mv go-getter-file-darwin-arm64 /usr/local/bin/go-getter-file
+            ```
+
+            ### Windows
+            Download the ZIP file, extract it, and add the executable to your PATH.
+
+            ### Verify checksums
+            ```bash
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/checksums.txt
+            sha256sum -c checksums.txt
+            ```
+
+            ## What's Changed
+            See the full changelog below.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
