@@ -55,6 +55,20 @@ sources:
     recursive: true
 ```
 
+## TODO
+
+- [ ] Add support for configurable configuration file patterns (e.g. `*.getter.yaml`, `*.config.yaml`) through CLI flag/env variable
+- [ ] Add support for excluding certain files or directories through CLI flag/env variable
+- [ ] Add support for dry-run mode to preview actions without making changes
+- [ ] Add support for logging levels (info, debug, error) through CLI flag/env
+- [ ] Add support for outputting results to a log file through CLI flag/env
+- [ ] Add support for validating configuration files before processing
+- [ ] Add support for more advanced go-getter options (e.g. authentication, proxies) through configuration file
+- [ ] Add opentelemetry tracing and metrics
+- [ ] Add unit and integration tests
+- [ ] Add Dockerfile for containerized usage
+- [ ] Add just file for building project
+- [ ] Add GitHub Actions workflow for CI/CD
 
 ## License
 

@@ -1,0 +1,30 @@
+# Example configuration file for go-getter-file
+version: 1
+name: "example-project"
+
+# Global configuration for all sources
+config:
+  # Optional: number of parallel fetches (default: 4)
+  parallelism: 4
+  # Optional: number of retries for fetching each source (default: 3)
+  retries: 3
+  # Optional: timeout for each fetch operation (default: 30s)
+  timeout: 30s
+  # Optional: specify a custom path for go-getter operations, if not set use internal go-getter
+  #go-getter-path: "/opt/go-getter"
+
+sources:
+  # Fetch a single file from a URL
+  - url: "https://raw.githubusercontent.com/hashicorp/go-getter/main/README.md"
+    dest: "downloaded-readme.md"
+    # Optional: override global timeout for this source
+    timeout: 60s
+
+  # Fetch from GitHub
+  - url: "github.com/hashicorp/go-getter//README.md"
+    dest: "github-readme.md"
+
+  # Fetch an entire directory (if the source supports it)
+  # - url: "https://example.com/config/"
+  #   dest: "local-config/"
+  #   recursive: true
