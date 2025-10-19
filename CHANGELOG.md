@@ -5,13 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) whenever releases are tagged.
 
 ## [Unreleased]
+### Changed
+- `just cleanup` now runs `go mod tidy` to ensure module metadata stays in sync.
 
 ## [0.0.2] - 2025-10-19
 ### Added
 - `internal/app` package that exposes the CLI workflow for programmatic use.
 - `just fmt-imports` task to run gofmt and goimports across the codebase.
 - `just cleanup` aggregate task to execute all formatting helpers.
-- `just cleanup` now runs `go mod tidy` to ensure module metadata stays in sync.
 - Repository-managed `pre-commit` hook that runs the cleanup routine automatically when enabled.
 - `just install-hooks` helper to wire up the repository-managed git hooks.
 - Dependabot configuration covering GitHub Actions and grouped Go module updates.
