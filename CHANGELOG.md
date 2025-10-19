@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - `just cleanup` aggregate task to execute all formatting helpers.
 - Repository-managed `pre-commit` hook that runs the cleanup routine automatically when enabled.
 - `just install-hooks` helper to wire up the repository-managed git hooks.
+- Dependabot configuration covering GitHub Actions and grouped Go module updates.
 
 ### Changed
 - Integration tests execute the CLI in-process, automatically skipping network-dependent cases when connectivity is unavailable.
