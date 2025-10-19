@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - `internal/app` package that exposes the CLI workflow for programmatic use.
 - `just fmt-imports` task to run gofmt and goimports across the codebase.
 - `just cleanup` aggregate task to execute all formatting helpers.
+- `just cleanup` now runs `go mod tidy` to ensure module metadata stays in sync.
 - Repository-managed `pre-commit` hook that runs the cleanup routine automatically when enabled.
 - `just install-hooks` helper to wire up the repository-managed git hooks.
 - Dependabot configuration covering GitHub Actions and grouped Go module updates.

@@ -87,6 +87,7 @@ fmt-imports:
 cleanup:
     @just fmt
     @just fmt-imports
+    go mod tidy
 
 # Configure git hooks to run cleanup before commits
 install-hooks:

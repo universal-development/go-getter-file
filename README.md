@@ -94,6 +94,8 @@ just fmt-imports
 
 # Run all formatting helpers in one step
 just cleanup
+
+# Cleanup also runs go mod tidy to sync module files
 ```
 
 ### Testing
