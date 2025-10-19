@@ -1,32 +1,28 @@
 package test
 
 import (
+	"bytes"
+	"context"
+	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/universal-development/go-getter-file/internal/app"
 )
 
 const (
-	testTimeout = 60 * time.Second
+	testCLIVersion      = "test"
+	networkProbeTimeout = 5 * time.Second
 )
 
-var (
-	rootDir      string
-	fixturesPath string
-)
+var fixturesPath string
 
 // TestMain sets up test environment
 func TestMain(m *testing.M) {
 	var err error
-
-	// Get the root directory (parent of test/)
-	rootDir, err = filepath.Abs("../")
-	if err != nil {
-		panic("Failed to get root directory: " + err.Error())
-	}
 
 	// Get absolute path to fixtures directory
 	fixturesPath, err = filepath.Abs("fixtures")
@@ -38,28 +34,56 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// runCLI executes the go-getter-file CLI using 'go run'
-func runCLI(workDir string, args ...string) ([]byte, error) {
-	// Build command: go run <rootDir> <args>
-	cmdArgs := append([]string{"run", rootDir}, args...)
-	cmd := exec.Command("go", cmdArgs...)
-	if workDir != "" {
-		cmd.Dir = workDir
+// runCLI executes the go-getter-file CLI directly via the app package
+func runCLI(t *testing.T, workDir string, args ...string) (string, error) {
+	t.Helper()
+
+	origDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Failed to get working directory: %v", err)
 	}
-	return cmd.CombinedOutput()
+
+	if workDir != "" {
+		if err := os.Chdir(workDir); err != nil {
+			t.Fatalf("Failed to change to workDir %s: %v", workDir, err)
+		}
+		defer func() {
+			if err := os.Chdir(origDir); err != nil {
+				t.Fatalf("Failed to restore working directory: %v", err)
+			}
+		}()
+	}
+
+	var stdout bytes.Buffer
+
+	err = app.Run(context.Background(), testCLIVersion, args, &stdout)
+	output := stdout.String()
+	return output, err
+}
+
+func ensureNetwork(t *testing.T) {
+	t.Helper()
+
+	conn, err := net.DialTimeout("tcp", "raw.githubusercontent.com:443", networkProbeTimeout)
+	if err != nil {
+		t.Skipf("skipping test: network unavailable (%v)", err)
+		return
+	}
+	_ = conn.Close()
 }
 
 // TestFetchFromGitHub tests fetching a single file from GitHub
 func TestFetchFromGitHub(t *testing.T) {
+	ensureNetwork(t)
 	testDir := t.TempDir()
 
 	// Use fixture file
 	fixtureFile := filepath.Join(fixturesPath, "github-single-file.go.getter.yaml")
 
 	// Run the application from test directory (so relative paths in fixture work)
-	output, err := runCLI(testDir, fixtureFile)
+	output, err := runCLI(t, testDir, fixtureFile)
 	if err != nil {
-		t.Fatalf("Command failed: %v\nOutput: %s", err, string(output))
+		t.Fatalf("Command failed: %v\nOutput: %s", err, output)
 	}
 
 	// Verify output directory exists and contains README.md
@@ -87,15 +111,16 @@ func TestFetchFromGitHub(t *testing.T) {
 
 // TestFetchFromGitHubDirectory tests fetching a directory from GitHub
 func TestFetchFromGitHubDirectory(t *testing.T) {
+	ensureNetwork(t)
 	testDir := t.TempDir()
 
 	// Use fixture file
 	fixtureFile := filepath.Join(fixturesPath, "github-directory.go.getter.yaml")
 
 	// Run the application from test directory
-	output, err := runCLI(testDir, fixtureFile)
+	output, err := runCLI(t, testDir, fixtureFile)
 	if err != nil {
-		t.Fatalf("Command failed: %v\nOutput: %s", err, string(output))
+		t.Fatalf("Command failed: %v\nOutput: %s", err, output)
 	}
 
 	// Verify output directory exists and contains files
@@ -118,15 +143,16 @@ func TestFetchFromGitHubDirectory(t *testing.T) {
 
 // TestProcessMultipleFiles tests processing a config with multiple sources
 func TestProcessMultipleFiles(t *testing.T) {
+	ensureNetwork(t)
 	testDir := t.TempDir()
 
 	// Use fixture file
 	fixtureFile := filepath.Join(fixturesPath, "multiple-files.go.getter.yaml")
 
 	// Run the application from test directory
-	output, err := runCLI(testDir, fixtureFile)
+	output, err := runCLI(t, testDir, fixtureFile)
 	if err != nil {
-		t.Fatalf("Command failed: %v\nOutput: %s", err, string(output))
+		t.Fatalf("Command failed: %v\nOutput: %s", err, output)
 	}
 
 	// Verify both output directories exist and contain the expected files
@@ -155,6 +181,7 @@ func TestProcessMultipleFiles(t *testing.T) {
 
 // TestProcessMultipleConfigFiles tests processing multiple config files at once
 func TestProcessMultipleConfigFiles(t *testing.T) {
+	ensureNetwork(t)
 	testDir := t.TempDir()
 
 	// Use fixtures directly
@@ -162,9 +189,9 @@ func TestProcessMultipleConfigFiles(t *testing.T) {
 	config2 := filepath.Join(fixturesPath, "config2.go.getter.yaml")
 
 	// Run with both config files from test directory
-	output, err := runCLI(testDir, config1, config2)
+	output, err := runCLI(t, testDir, config1, config2)
 	if err != nil {
-		t.Fatalf("Command failed: %v\nOutput: %s", err, string(output))
+		t.Fatalf("Command failed: %v\nOutput: %s", err, output)
 	}
 
 	// Verify both outputs exist
@@ -192,15 +219,16 @@ func TestProcessMultipleConfigFiles(t *testing.T) {
 
 // TestProcessDirectory tests processing all config files in a directory
 func TestProcessDirectory(t *testing.T) {
+	ensureNetwork(t)
 	testDir := t.TempDir()
 
 	// Use fixtures batch-configs directory
 	configsDir := filepath.Join(fixturesPath, "batch-configs")
 
 	// Run with directory from test directory
-	output, err := runCLI(testDir, configsDir)
+	output, err := runCLI(t, testDir, configsDir)
 	if err != nil {
-		t.Fatalf("Command failed: %v\nOutput: %s", err, string(output))
+		t.Fatalf("Command failed: %v\nOutput: %s", err, output)
 	}
 
 	// Verify all output files exist
@@ -234,12 +262,12 @@ func TestProcessDirectory(t *testing.T) {
 
 // TestVersionFlag tests the --version flag
 func TestVersionFlag(t *testing.T) {
-	output, err := runCLI("", "--version")
+	output, err := runCLI(t, "", "--version")
 	if err != nil {
-		t.Fatalf("Command failed: %v\nOutput: %s", err, string(output))
+		t.Fatalf("Command failed: %v\nOutput: %s", err, output)
 	}
 
-	outputStr := string(output)
+	outputStr := output
 	if !strings.Contains(outputStr, "go-getter-file version") {
 		t.Errorf("Expected version string, got: %s", outputStr)
 	}
@@ -249,7 +277,7 @@ func TestVersionFlag(t *testing.T) {
 
 // TestHelpFlag tests the --help flag
 func TestHelpFlag(t *testing.T) {
-	output, err := runCLI("", "--help")
+	output, err := runCLI(t, "", "--help")
 	if err != nil {
 		// Help might exit with non-zero, but should still produce output
 		if len(output) == 0 {
@@ -257,7 +285,7 @@ func TestHelpFlag(t *testing.T) {
 		}
 	}
 
-	outputStr := string(output)
+	outputStr := output
 	expectedStrings := []string{"Usage:", "Options:", "Examples:"}
 	for _, expected := range expectedStrings {
 		if !strings.Contains(outputStr, expected) {
@@ -274,15 +302,13 @@ func TestInvalidConfig(t *testing.T) {
 	configFile := filepath.Join(fixturesPath, "invalid.go.getter.yaml")
 
 	// Run the application - should fail
-	output, err := runCLI("", configFile)
+	_, err := runCLI(t, "", configFile)
 	if err == nil {
 		t.Error("Expected command to fail with invalid config, but it succeeded")
 	}
 
-	// Verify error message is informative
-	outputStr := string(output)
-	if !strings.Contains(outputStr, "Error") && !strings.Contains(outputStr, "error") {
-		t.Errorf("Expected error message in output, got: %s", outputStr)
+	if err != nil && !strings.Contains(err.Error(), "invalid config file") {
+		t.Errorf("Expected error to mention invalid config, got: %v", err)
 	}
 
 	t.Log("Invalid config correctly rejected")
@@ -290,14 +316,19 @@ func TestInvalidConfig(t *testing.T) {
 
 // TestNonExistentFile tests handling of non-existent config file
 func TestNonExistentFile(t *testing.T) {
-	output, err := runCLI("", "/nonexistent/path/to/config.yaml")
+	output, err := runCLI(t, "", "/nonexistent/path/to/config.yaml")
 	if err == nil {
 		t.Error("Expected command to fail with non-existent file, but it succeeded")
 	}
 
-	outputStr := string(output)
-	if !strings.Contains(outputStr, "Error") && !strings.Contains(outputStr, "error") {
-		t.Errorf("Expected error message in output, got: %s", outputStr)
+	if err != nil {
+		if !strings.Contains(err.Error(), "failed to expand path") {
+			t.Errorf("Unexpected error message: %v", err)
+		}
+	}
+
+	if len(output) == 0 {
+		t.Errorf("Expected output describing missing file, got empty output")
 	}
 
 	t.Log("Non-existent file correctly handled")

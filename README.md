@@ -135,6 +135,10 @@ This allows you to:
 
 The version is automatically derived from git tags using `git describe --tags --abbrev=12 --dirty --broken`.
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
+
 ## TODO
 
 - [ ] Add support for configurable configuration file patterns (e.g. `*.getter.yaml`, `*.config.yaml`) through CLI flag/env variable
@@ -147,8 +151,8 @@ The version is automatically derived from git tags using `git describe --tags --
 - [ ] Add opentelemetry tracing and metrics
 - [ ] Add unit and integration tests
 - [ ] Add Dockerfile for containerized usage
-- [ ] Add just file for building project
-- [ ] Add GitHub Actions workflow for CI/CD
+- [x] Add just file for building project
+- [x] Add GitHub Actions workflow for CI/CD
 - [ ] Add custom headers to requests
 
 ## License
