@@ -73,9 +73,26 @@ install:
     VERSION=$(git describe --tags --abbrev=12 --dirty --broken 2>/dev/null || echo "dev")
     go install -ldflags "-X main.version=$VERSION"
 
-# Format code
+# Format code using gofmt (package-level)
 fmt:
     go fmt ./...
+
+# Format codebase and organize imports with gofmt + goimports
+fmt-imports:
+    @command -v goimports >/dev/null 2>&1 || { echo "goimports not installed. Install: go install golang.org/x/tools/cmd/goimports@latest"; exit 1; }
+    gofmt -w $(git ls-files '*.go')
+    goimports -w $(git ls-files '*.go')
+
+# Run all code cleanup tasks
+cleanup:
+    @just fmt
+    @just fmt-imports
+
+# Configure git hooks to run cleanup before commits
+install-hooks:
+    @git rev-parse --git-dir >/dev/null 2>&1 || { echo "Not inside a git repository" >&2; exit 1; }
+    git config core.hooksPath .githooks
+    @echo "Git hooks configured to run code cleanup before commits."
 
 # Lint code
 lint:

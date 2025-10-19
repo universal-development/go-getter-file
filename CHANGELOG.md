@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ## [Unreleased]
 ### Added
 - `internal/app` package that exposes the CLI workflow for programmatic use.
+- `just fmt-imports` task to run gofmt and goimports across the codebase.
+- `just cleanup` aggregate task to execute all formatting helpers.
+- Repository-managed `pre-commit` hook that runs the cleanup routine automatically when enabled.
+- `just install-hooks` helper to wire up the repository-managed git hooks.
 
 ### Changed
 - Integration tests execute the CLI in-process, automatically skipping network-dependent cases when connectivity is unavailable.

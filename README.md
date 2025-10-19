@@ -83,6 +83,19 @@ just clean
 just --list
 ```
 
+### Formatting
+
+```bash
+# Gofmt across packages
+just fmt
+
+# Gofmt + goimports on every tracked Go file
+just fmt-imports
+
+# Run all formatting helpers in one step
+just cleanup
+```
+
 ### Testing
 
 ```bash
@@ -134,6 +147,16 @@ This allows you to:
 - Create draft releases for review before publishing
 
 The version is automatically derived from git tags using `git describe --tags --abbrev=12 --dirty --broken`.
+
+### Git Hooks
+
+To run the code cleanup automatically before each commit:
+
+```bash
+just install-hooks
+```
+
+This sets `core.hooksPath` to `.githooks`; the `pre-commit` hook then invokes `just cleanup` and restages any formatted files.
 
 ## Changelog
 

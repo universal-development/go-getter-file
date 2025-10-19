@@ -9,9 +9,9 @@ import (
 
 func TestNew(t *testing.T) {
 	tests := []struct {
-		name              string
-		config            config.Config
-		wantExternalBin   bool
+		name            string
+		config          config.Config
+		wantExternalBin bool
 	}{
 		{
 			name: "embedded go-getter (no path specified)",
