@@ -11,6 +11,22 @@ on:
     branches:
       - main
       - master
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g., v1.0.0)'
+        required: true
+        type: string
+      draft:
+        description: 'Create as draft release'
+        required: false
+        type: boolean
+        default: false
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -102,12 +118,40 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Determine release type
+        id: release_type
+        run: |
+          # Get tag name from either push or workflow_dispatch
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+            DRAFT="${{ github.event.inputs.draft }}"
+            PRERELEASE="${{ github.event.inputs.prerelease }}"
+          else
+            TAG="${{ github.ref_name }}"
+            DRAFT="false"
+            # Auto-detect pre-release from tag name
+            if echo "$TAG" | grep -qE '(alpha|beta|rc|pre|preview|dev)'; then
+              PRERELEASE="true"
+            else
+              PRERELEASE="false"
+            fi
+          fi
+
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "draft=$DRAFT" >> $GITHUB_OUTPUT
+          echo "prerelease=$PRERELEASE" >> $GITHUB_OUTPUT
+
+          echo "Release Configuration:"
+          echo "  Tag: $TAG"
+          echo "  Draft: $DRAFT"
+          echo "  Pre-release: $PRERELEASE"
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -115,24 +159,30 @@ jobs:
           name: binaries
           path: dist/
 
+      - name: Set executable permissions
+        run: |
+          chmod +x dist/go-getter-file-*
+          ls -lh dist/
+
       - name: Create release archives
         run: |
           cd dist
+          TAG="${{ steps.release_type.outputs.tag }}"
 
           # Linux amd64
-          tar czf go-getter-file-${{ github.ref_name }}-linux-amd64.tar.gz go-getter-file-linux-amd64
+          tar czf go-getter-file-$TAG-linux-amd64.tar.gz go-getter-file-linux-amd64
 
           # Linux arm64
-          tar czf go-getter-file-${{ github.ref_name }}-linux-arm64.tar.gz go-getter-file-linux-arm64
+          tar czf go-getter-file-$TAG-linux-arm64.tar.gz go-getter-file-linux-arm64
 
           # macOS amd64
-          tar czf go-getter-file-${{ github.ref_name }}-darwin-amd64.tar.gz go-getter-file-darwin-amd64
+          tar czf go-getter-file-$TAG-darwin-amd64.tar.gz go-getter-file-darwin-amd64
 
           # macOS arm64
-          tar czf go-getter-file-${{ github.ref_name }}-darwin-arm64.tar.gz go-getter-file-darwin-arm64
+          tar czf go-getter-file-$TAG-darwin-arm64.tar.gz go-getter-file-darwin-arm64
 
           # Windows amd64
-          zip go-getter-file-${{ github.ref_name }}-windows-amd64.zip go-getter-file-windows-amd64.exe
+          zip go-getter-file-$TAG-windows-amd64.zip go-getter-file-windows-amd64.exe
 
           # Update checksums with archives
           sha256sum *.tar.gz *.zip > checksums.txt
@@ -142,15 +192,16 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ steps.release_type.outputs.tag }}
           files: |
-            dist/go-getter-file-${{ github.ref_name }}-linux-amd64.tar.gz
-            dist/go-getter-file-${{ github.ref_name }}-linux-arm64.tar.gz
-            dist/go-getter-file-${{ github.ref_name }}-darwin-amd64.tar.gz
-            dist/go-getter-file-${{ github.ref_name }}-darwin-arm64.tar.gz
-            dist/go-getter-file-${{ github.ref_name }}-windows-amd64.zip
+            dist/go-getter-file-${{ steps.release_type.outputs.tag }}-linux-amd64.tar.gz
+            dist/go-getter-file-${{ steps.release_type.outputs.tag }}-linux-arm64.tar.gz
+            dist/go-getter-file-${{ steps.release_type.outputs.tag }}-darwin-amd64.tar.gz
+            dist/go-getter-file-${{ steps.release_type.outputs.tag }}-darwin-arm64.tar.gz
+            dist/go-getter-file-${{ steps.release_type.outputs.tag }}-windows-amd64.zip
             dist/checksums.txt
-          draft: false
-          prerelease: false
+          draft: ${{ steps.release_type.outputs.draft }}
+          prerelease: ${{ steps.release_type.outputs.prerelease }}
           generate_release_notes: true
           body: |
             ## Installation
@@ -160,14 +211,14 @@ jobs:
             ### Linux
             ```bash
             # AMD64
-            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/go-getter-file-${{ github.ref_name }}-linux-amd64.tar.gz
-            tar xzf go-getter-file-${{ github.ref_name }}-linux-amd64.tar.gz
+            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.release_type.outputs.tag }}/go-getter-file-${{ steps.release_type.outputs.tag }}-linux-amd64.tar.gz
+            tar xzf go-getter-file-${{ steps.release_type.outputs.tag }}-linux-amd64.tar.gz
             chmod +x go-getter-file-linux-amd64
             sudo mv go-getter-file-linux-amd64 /usr/local/bin/go-getter-file
 
             # ARM64
-            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/go-getter-file-${{ github.ref_name }}-linux-arm64.tar.gz
-            tar xzf go-getter-file-${{ github.ref_name }}-linux-arm64.tar.gz
+            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.release_type.outputs.tag }}/go-getter-file-${{ steps.release_type.outputs.tag }}-linux-arm64.tar.gz
+            tar xzf go-getter-file-${{ steps.release_type.outputs.tag }}-linux-arm64.tar.gz
             chmod +x go-getter-file-linux-arm64
             sudo mv go-getter-file-linux-arm64 /usr/local/bin/go-getter-file
             ```
@@ -175,14 +226,14 @@ jobs:
             ### macOS
             ```bash
             # Intel (AMD64)
-            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/go-getter-file-${{ github.ref_name }}-darwin-amd64.tar.gz
-            tar xzf go-getter-file-${{ github.ref_name }}-darwin-amd64.tar.gz
+            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.release_type.outputs.tag }}/go-getter-file-${{ steps.release_type.outputs.tag }}-darwin-amd64.tar.gz
+            tar xzf go-getter-file-${{ steps.release_type.outputs.tag }}-darwin-amd64.tar.gz
             chmod +x go-getter-file-darwin-amd64
             sudo mv go-getter-file-darwin-amd64 /usr/local/bin/go-getter-file
 
             # Apple Silicon (ARM64)
-            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/go-getter-file-${{ github.ref_name }}-darwin-arm64.tar.gz
-            tar xzf go-getter-file-${{ github.ref_name }}-darwin-arm64.tar.gz
+            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.release_type.outputs.tag }}/go-getter-file-${{ steps.release_type.outputs.tag }}-darwin-arm64.tar.gz
+            tar xzf go-getter-file-${{ steps.release_type.outputs.tag }}-darwin-arm64.tar.gz
             chmod +x go-getter-file-darwin-arm64
             sudo mv go-getter-file-darwin-arm64 /usr/local/bin/go-getter-file
             ```
@@ -192,7 +243,7 @@ jobs:
 
             ### Verify checksums
             ```bash
-            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/checksums.txt
+            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.release_type.outputs.tag }}/checksums.txt
             sha256sum -c checksums.txt
             ```
 

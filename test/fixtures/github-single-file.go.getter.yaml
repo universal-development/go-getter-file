@@ -1,0 +1,11 @@
+# Test configuration - fetch a single file from GitHub
+version: 1
+name: "github-single-file"
+
+config:
+  retries: 3
+  timeout: 30s
+
+sources:
+  - url: "https://raw.githubusercontent.com/hashicorp/go-getter/main/README.md"
+    dest: "output"

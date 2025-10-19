@@ -1,0 +1,11 @@
+# Test configuration - fetch a directory/archive from GitHub
+version: 1
+name: "github-directory"
+
+config:
+  retries: 3
+  timeout: 30s
+
+sources:
+  - url: "https://github.com/hashicorp/go-getter/archive/refs/heads/main.zip"
+    dest: "output"

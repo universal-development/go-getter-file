@@ -83,6 +83,19 @@ just clean
 just --list
 ```
 
+### Formatting
+
+```bash
+# Gofmt across packages
+just fmt
+
+# Gofmt + goimports on every tracked Go file
+just fmt-imports
+
+# Run all formatting helpers in one step
+just cleanup
+```
+
 ### Testing
 
 ```bash
@@ -104,14 +117,50 @@ The project uses GitHub Actions for continuous integration and deployment:
   - Compressed archives (.tar.gz, .zip)
   - SHA256 checksums
   - Auto-generated release notes
+- **Manual Trigger**: Supports workflow_dispatch for custom releases
 
-To create a new release:
+#### Creating Releases
+
+**Standard Release:**
 ```bash
 git tag -a v1.0.0 -m "Release v1.0.0"
 git push origin v1.0.0
 ```
 
+**Pre-Release (auto-detected):**
+Tags containing `alpha`, `beta`, `rc`, `pre`, `preview`, or `dev` are automatically marked as pre-releases:
+```bash
+git tag -a v1.0.0-rc1 -m "Release candidate 1"
+git push origin v1.0.0-rc1
+```
+
+**Manual Release (via GitHub Actions UI):**
+1. Go to Actions → CI/CD → Run workflow
+2. Enter the tag name (e.g., `v1.0.0`)
+3. Optionally check "Create as draft release"
+4. Optionally check "Mark as pre-release"
+5. Click "Run workflow"
+
+This allows you to:
+- Create releases without pushing tags
+- Override automatic pre-release detection
+- Create draft releases for review before publishing
+
 The version is automatically derived from git tags using `git describe --tags --abbrev=12 --dirty --broken`.
+
+### Git Hooks
+
+To run the code cleanup automatically before each commit:
+
+```bash
+just install-hooks
+```
+
+This sets `core.hooksPath` to `.githooks`; the `pre-commit` hook then invokes `just cleanup` and restages any formatted files.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
 
 ## TODO
 
@@ -125,8 +174,8 @@ The version is automatically derived from git tags using `git describe --tags --
 - [ ] Add opentelemetry tracing and metrics
 - [ ] Add unit and integration tests
 - [ ] Add Dockerfile for containerized usage
-- [ ] Add just file for building project
-- [ ] Add GitHub Actions workflow for CI/CD
+- [x] Add just file for building project
+- [x] Add GitHub Actions workflow for CI/CD
 - [ ] Add custom headers to requests
 
 ## License

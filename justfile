@@ -39,9 +39,18 @@ run:
     @just build
     ./go-getter-file example.go.getter.yaml
 
-# Run tests
+# Run unit tests
 test:
-    go test -v ./...
+    go test -v ./internal/...
+
+# Run integration tests
+test-integration:
+    cd test && go test -v -timeout 5m
+
+# Run all tests (unit + integration)
+test-all:
+    go test -v ./internal/...
+    cd test && go test -v -timeout 5m
 
 # Run tests with coverage
 test-coverage:
@@ -56,6 +65,7 @@ clean:
     rm -rf dist/
     rm -f coverage.out coverage.html
     rm -rf downloaded-*.md github-*.md
+    rm -f test/go-getter-file
 
 # Install the application
 install:
@@ -63,9 +73,26 @@ install:
     VERSION=$(git describe --tags --abbrev=12 --dirty --broken 2>/dev/null || echo "dev")
     go install -ldflags "-X main.version=$VERSION"
 
-# Format code
+# Format code using gofmt (package-level)
 fmt:
     go fmt ./...
+
+# Format codebase and organize imports with gofmt + goimports
+fmt-imports:
+    @command -v goimports >/dev/null 2>&1 || { echo "goimports not installed. Install: go install golang.org/x/tools/cmd/goimports@latest"; exit 1; }
+    gofmt -w $(git ls-files '*.go')
+    goimports -w $(git ls-files '*.go')
+
+# Run all code cleanup tasks
+cleanup:
+    @just fmt
+    @just fmt-imports
+
+# Configure git hooks to run cleanup before commits
+install-hooks:
+    @git rev-parse --git-dir >/dev/null 2>&1 || { echo "Not inside a git repository" >&2; exit 1; }
+    git config core.hooksPath .githooks
+    @echo "Git hooks configured to run code cleanup before commits."
 
 # Lint code
 lint:
@@ -87,6 +114,9 @@ show-version:
 # Development workflow - format, test, build
 dev: fmt test build
 
-# Prepare for release - format, lint, test, build-all
-release: fmt lint test build-all
+# Development workflow with all tests
+dev-full: fmt test-all build
+
+# Prepare for release - format, lint, test-all, build-all
+release: fmt lint test-all build-all
     @echo "Release build complete!"

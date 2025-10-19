@@ -1,0 +1,7 @@
+# Batch test configuration 1
+version: 1
+name: "batch1"
+
+sources:
+  - url: "https://raw.githubusercontent.com/hashicorp/go-getter/main/README.md"
+    dest: "batch_out1"

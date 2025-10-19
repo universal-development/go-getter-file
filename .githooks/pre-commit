@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! command -v just >/dev/null 2>&1; then
+    echo "[pre-commit] just not found, skipping cleanup" >&2
+    exit 0
+fi
+
+echo "[pre-commit] Running code cleanup"
+just cleanup
+
+files=$(git diff --name-only -- '*.go' go.mod go.sum)
+if [ -n "$files" ]; then
+    while IFS= read -r file; do
+        [ -n "$file" ] && git add -- "$file"
+    done <<< "$files"
+fi

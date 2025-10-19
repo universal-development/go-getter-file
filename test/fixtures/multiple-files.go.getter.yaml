@@ -1,0 +1,14 @@
+# Test configuration - fetch multiple files in parallel
+version: 1
+name: "multiple-files"
+
+config:
+  parallelism: 2
+  retries: 3
+  timeout: 30s
+
+sources:
+  - url: "https://raw.githubusercontent.com/hashicorp/go-getter/main/README.md"
+    dest: "output1"
+  - url: "https://raw.githubusercontent.com/hashicorp/go-getter/main/CHANGELOG.md"
+    dest: "output2"

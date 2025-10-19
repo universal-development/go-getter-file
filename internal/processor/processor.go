@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/universal-development/go-getter-file/internal/config"
@@ -82,15 +83,17 @@ func (p *Processor) Process(ctx context.Context) error {
 
 	// Check for errors
 	var hasError bool
+	var details []string
 	for i, err := range errors {
 		if err != nil {
 			fmt.Printf("Error processing %s: %v\n", p.configFiles[i], err)
 			hasError = true
+			details = append(details, fmt.Sprintf("%s: %v", p.configFiles[i], err))
 		}
 	}
 
 	if hasError {
-		return fmt.Errorf("some configuration files failed to process")
+		return fmt.Errorf("some configuration files failed to process: %s", strings.Join(details, "; "))
 	}
 
 	return nil
@@ -145,14 +148,16 @@ func (p *Processor) processSources(ctx context.Context, f *fetcher.Fetcher, sour
 
 	// Check for errors
 	var hasError bool
-	for _, err := range errors {
+	var details []string
+	for idx, err := range errors {
 		if err != nil {
 			hasError = true
+			details = append(details, fmt.Sprintf("%s: %v", sources[idx].URL, err))
 		}
 	}
 
 	if hasError {
-		return fmt.Errorf("some sources failed to download")
+		return fmt.Errorf("some sources failed to download: %s", strings.Join(details, "; "))
 	}
 
 	return nil
