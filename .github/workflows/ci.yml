@@ -69,7 +69,7 @@ jobs:
         run: go tool cover -func=coverage.out
 
       - name: Upload coverage to artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-report
           path: coverage.out
@@ -109,7 +109,7 @@ jobs:
           cat checksums.txt
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: binaries
           path: dist/
@@ -154,7 +154,7 @@ jobs:
           echo "  Pre-release: $PRERELEASE"
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: binaries
           path: dist/
